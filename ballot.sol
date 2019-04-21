@@ -59,6 +59,11 @@ contract Ballot {
 		_;
 	}
 
+    event voterAdded();
+    event voteStarted();
+    event voteCounted();
+    event voteDone();
+
     //add voter
     function addVoter(address _voterAddress, string memory _voterName)
         public
@@ -70,6 +75,7 @@ contract Ballot {
         v.voterName = _voterName;
         v.voted = false;
         voterRegister.push(v);
+        emit voterAdded();
     }
 
     //declare voting starts now
@@ -79,6 +85,7 @@ contract Ballot {
         onlyOfficial
     {
         state = State.Voting;     
+        emit voteStarted();
     }
 
     //voters vote by indicating their choice (true/false)
@@ -101,7 +108,7 @@ contract Ballot {
                 break;
             }
         }
-        
+        emit voteDone();
         return found;
     }
     
@@ -122,6 +129,7 @@ contract Ballot {
         }
         
         countResult = myCount;
+        emit voteCounted();
         return myCount;
     }
 }
