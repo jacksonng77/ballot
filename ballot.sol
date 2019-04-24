@@ -1,7 +1,7 @@
 /**
  * @file ballot.sol
  * @author Jackson Ng <jacksonn@tp.edu.sg>
- * @date 21st Apr 2019
+ * @date 22nd Apr 2019
  */
 
 pragma solidity ^0.5.0;
