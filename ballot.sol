@@ -25,7 +25,7 @@ contract Ballot {
     string public ballotOfficialName;
     string public proposal;
     
-    vote[] public votes;
+    vote[] private votes;
     voter[] public voterRegister;
     
     enum State { Created, Voting, Ended }
