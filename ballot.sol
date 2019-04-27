@@ -104,7 +104,7 @@ contract Ballot {
                 v.voterAddress = msg.sender;
                 v.choice = _choice;
                 votes.push(v);
-                found == true;
+                found = true;
                 break;
             }
         }
