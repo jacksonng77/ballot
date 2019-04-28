@@ -98,7 +98,7 @@ contract Ballot {
         
         for (uint i=0; i<voterRegister.length; i++) {
             if (voterRegister[i].voterAddress == msg.sender 
-            && voterRegister[i].voted == false){
+            && !voterRegister[i].voted){
                 voterRegister[i].voted = true;
                 vote memory v;
                 v.voterAddress = msg.sender;
@@ -123,7 +123,7 @@ contract Ballot {
         
         state = State.Ended;
         for (uint i=0; i<votes.length; i++){
-            if (votes[i].choice == true){
+            if (votes[i].choice){
                 myCount++;
             }
         }
