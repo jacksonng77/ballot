@@ -14,19 +14,19 @@ contract Ballot {
     }
     
     struct voter{
-        address voterAddress;
         string voterName;
         bool voted;
     }
 
     uint public countResult = 0;
-
+    uint public totalVoter = 0;
+    uint public totalVote = 0;
     address public ballotOfficialAddress;      
     string public ballotOfficialName;
     string public proposal;
     
-    vote[] private votes;
-    voter[] public voterRegister;
+    mapping(uint => vote) votes;
+    mapping(address => voter) voterRegister;
     
     enum State { Created, Voting, Ended }
 	State public state;
@@ -53,7 +53,6 @@ contract Ballot {
 		_;
 	}
 
-	
 	modifier inState(State _state) {
 		require(state == _state);
 		_;
@@ -71,10 +70,10 @@ contract Ballot {
         onlyOfficial
     {
         voter memory v;
-        v.voterAddress = _voterAddress;
         v.voterName = _voterName;
         v.voted = false;
-        voterRegister.push(v);
+        voterRegister[_voterAddress] = v;
+        totalVoter++;
         emit voterAdded();
     }
 
@@ -96,17 +95,15 @@ contract Ballot {
     {
         bool found = false;
         
-        for (uint i=0; i<voterRegister.length; i++) {
-            if (voterRegister[i].voterAddress == msg.sender 
-            && !voterRegister[i].voted){
-                voterRegister[i].voted = true;
-                vote memory v;
-                v.voterAddress = msg.sender;
-                v.choice = _choice;
-                votes.push(v);
-                found = true;
-                break;
-            }
+        //TODO Check if the name is found in vote register
+        if (!voterRegister[msg.sender].voted){
+            voterRegister[msg.sender].voted = true;
+            vote memory v;
+            v.voterAddress = msg.sender;
+            v.choice = _choice;
+            votes[totalVote] = v;
+            totalVote++;
+            found = true;
         }
         emit voteDone();
         return found;
@@ -122,7 +119,7 @@ contract Ballot {
         uint myCount=0;
         
         state = State.Ended;
-        for (uint i=0; i<votes.length; i++){
+        for (uint i=0; i<totalVote; i++){
             if (votes[i].choice){
                 myCount++;
             }
