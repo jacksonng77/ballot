@@ -25,8 +25,8 @@ contract Ballot {
     string public ballotOfficialName;
     string public proposal;
     
-    mapping(uint => vote) votes;
-    mapping(address => voter) voterRegister;
+    mapping(uint => vote) private votes;
+    mapping(address => voter) public voterRegister;
     
     enum State { Created, Voting, Ended }
 	State public state;
@@ -95,8 +95,8 @@ contract Ballot {
     {
         bool found = false;
         
-        //TODO Check if the name is found in vote register
-        if (!voterRegister[msg.sender].voted){
+        if (bytes(voterRegister[msg.sender].voterName).length != 0 
+        && !voterRegister[msg.sender].voted){
             voterRegister[msg.sender].voted = true;
             vote memory v;
             v.voterAddress = msg.sender;
