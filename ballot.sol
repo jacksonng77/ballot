@@ -76,7 +76,7 @@ contract Ballot {
         v.voted = false;
         voterRegister[_voterAddress] = v;
         totalVoter++;
-        emit voterAdded(msg.sender);
+        emit voterAdded(_voterAddress);
     }
 
     //declare voting starts now
