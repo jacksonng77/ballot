@@ -1,7 +1,8 @@
 /**
  * @file ballot.sol
  * @author Jackson Ng <jacksonn@tp.edu.sg>
- * @date 22nd Apr 2019
+ * @date created 22nd Apr 2019
+ * @date last modified 30th Apr 2019
  */
 
 pragma solidity ^0.5.0;
@@ -18,7 +19,8 @@ contract Ballot {
         bool voted;
     }
 
-    uint public countResult = 0;
+    uint private countResult = 0;
+    uint public finalResult = 0;
     uint public totalVoter = 0;
     uint public totalVote = 0;
     address public ballotOfficialAddress;      
@@ -58,11 +60,11 @@ contract Ballot {
 		_;
 	}
 
-    event voterAdded();
+    event voterAdded(address voter);
     event voteStarted();
-    event voteCounted();
-    event voteDone();
-
+    event voteEnded(uint finalResult);
+    event voteDone(address voter);
+    
     //add voter
     function addVoter(address _voterAddress, string memory _voterName)
         public
@@ -74,7 +76,7 @@ contract Ballot {
         v.voted = false;
         voterRegister[_voterAddress] = v;
         totalVoter++;
-        emit voterAdded();
+        emit voterAdded(msg.sender);
     }
 
     //declare voting starts now
@@ -101,32 +103,25 @@ contract Ballot {
             vote memory v;
             v.voterAddress = msg.sender;
             v.choice = _choice;
+            if (_choice){
+                countResult++; //counting on the go
+            }
             votes[totalVote] = v;
             totalVote++;
             found = true;
         }
-        emit voteDone();
+        emit voteDone(msg.sender);
         return found;
     }
     
-    //end and count votes
-    function countVote()
+    //end votes
+    function endVote()
         public
         inState(State.Voting)
         onlyOfficial
-        returns (uint totalVotes)
     {
-        uint myCount=0;
-        
         state = State.Ended;
-        for (uint i=0; i<totalVote; i++){
-            if (votes[i].choice){
-                myCount++;
-            }
-        }
-        
-        countResult = myCount;
-        emit voteCounted();
-        return myCount;
+        finalResult = countResult; //move result from private countResult to public finalResult
+        emit voteEnded(finalResult);
     }
 }
