@@ -1,6 +1,6 @@
 /**
  * @file ballot.sol
- * @author Jackson Ng <jacksonn@tp.edu.sg>
+ * @author Jackson Ng <jackson@jacksonng.org>
  * @date created 22nd Apr 2019
  * @date last modified 30th Apr 2019
  */
