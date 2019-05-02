@@ -37,6 +37,13 @@
                 	<input id="btnGo" class="btn btn-primary" type="button" value="Go" />
                 	<img id="loader" src="https://loading.io/spinners/reload/index.ajax-syncing-loading-icon.svg">
             	</div>
+
+            	<div id="kaleidorefresh" class="form-group">
+                	<label for="contractAddress">Contract Address</label>
+                	<input id="contractAddress" class="form-control" type="text" value="">
+                	<input id="btnRefresh" class="btn btn-primary" type="button" value="Refresh" />
+            	</div>
+
         	</div>
     	</div>
     	
@@ -123,11 +130,12 @@
         var accountaddress;
         var ballotContract;
         var ballotByteCode;
-        var ballot;
+        var Ballot;
         var ballotABI = [{"constant":false,"inputs":[],"name":"startVote","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalVoter","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"proposal","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_choice","type":"bool"}],"name":"doVote","outputs":[{"name":"voted","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"ballotOfficialAddress","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"voterRegister","outputs":[{"name":"voterName","type":"string"},{"name":"voted","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"endVote","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"state","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_voterAddress","type":"address"},{"name":"_voterName","type":"string"}],"name":"addVoter","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"ballotOfficialName","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"totalVote","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"finalResult","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_ballotOfficialName","type":"string"},{"name":"_proposal","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"voter","type":"address"}],"name":"voterAdded","type":"event"},{"anonymous":false,"inputs":[],"name":"voteStarted","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"finalResult","type":"uint256"}],"name":"voteEnded","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"voter","type":"address"}],"name":"voteDone","type":"event"}];
         var voterTable;
         
         $( document ).ready(function() {
+            $('#kaleidorefresh').hide();
             $('#panels_contract').hide();
             $('#panels_voters').hide();
 
@@ -172,6 +180,33 @@
 
         var BallotContractAddress = "";
         var MyTransactionHash;
+        
+        function refreshContract(_contractAddress){
+            loadBallotContract(_contractAddress);   
+            var myBallot = new web3.eth.Contract(ballotABI, _contractAddress);
+            var currentState = loadState(myBallot);
+            
+            if (currentState == 0){
+                $('#panels_contract').show();
+                $('#panels_voters').show();
+                $("#btnStart").show();
+                $("#btnEnd").hide();
+                $("#loader").hide();
+                $("#section_addVoter").show();                
+            }
+            else if (currentState == 1){
+                 $("#loaderStartVote").hide();
+                $("#btnStart").hide();
+                $("#btnEnd").show();
+                $("#section_addVoter").hide();              
+            }
+            else if (currentState == 2){
+                $("#loaderStartVote").hide();
+                $("#btnEnd").hide();                
+            }
+            
+        }
+        
         function getContract(){
             web3.eth.getTransactionReceipt(MyTransactionHash)
             .then((receipt) => {
@@ -180,6 +215,7 @@
                         BallotContractAddress = receipt.contractAddress;
                         loadBallotContract(BallotContractAddress);
                         console.log(BallotContractAddress);
+                        $("#contractAddress").val(BallotContractAddress);
                         watchVoteStarted(); //start watching for events
                         watchVoterAdded(); //start watching for new voters
                         watchVoteDone(); //start watching for vote done
@@ -330,6 +366,7 @@
                     $("#lbl_state").addClass("label label-danger");
                     $("#lbl_state").html("Ended");                    
                 } 
+                return result;
             });
         }
         
@@ -365,11 +402,18 @@
 
         $("#btnEnd").click(async function(){
             $("#loaderStartVote").show();
-            Ballot = new web3.eth.Contract(ballotABI, BallotContractAddress);
+            //Ballot = new web3.eth.Contract(ballotABI, BallotContractAddress);
+            
+            var mygas;
+            Ballot.methods.endVote().estimateGas({from: accountaddress})
+            .then(function(gasAmount){
+                mygas = gasAmount;
+            })
+            
         	Ballot.methods.endVote().send({
                 from: accountaddress,
-                gas: 2000000, 
-                gasPrice: web3.utils.toWei('20', 'gwei')        	    
+                gas: mygas, 
+                gasPrice: web3.eth.gasPrice        	    
         	})
             .on('transactionHash', (hash) => {
                 console.log("a");
@@ -386,11 +430,18 @@
 
         $("#btnStart").click(async function() {	
             $("#loaderStartVote").show();
-            Ballot = new web3.eth.Contract(ballotABI, BallotContractAddress);
+            //Ballot = new web3.eth.Contract(ballotABI, BallotContractAddress);
+            
+            var mygas;
+            Ballot.methods.startVote().estimateGas({from: accountaddress})
+            .then(function(gasAmount){
+                mygas = gasAmount;
+            })
+            
         	Ballot.methods.startVote().send({
                 from: accountaddress,
-                gas: 2000000, 
-                gasPrice: web3.utils.toWei('20', 'gwei')        	    
+                gas: mygas, 
+                gasPrice: web3.eth.gasPrice        	    
         	})
             .on('transactionHash', (hash) => {
                 console.log("a");
@@ -410,11 +461,19 @@
             console.log($("#txtNewVoterAddress").val());
             console.log($("#txtNewVoterName").val());
             
-            Ballot = new web3.eth.Contract(ballotABI, BallotContractAddress);
+            //Ballot = new web3.eth.Contract(ballotABI, BallotContractAddress);
+            
+            //estimate first
+            var mygas;
+            Ballot.methods.addVoter($("#txtNewVoterAddress").val(), $("#txtNewVoterName").val()).estimateGas({from: accountaddress})
+            .then(function(gasAmount){
+                mygas = gasAmount;
+            })
+            
         	Ballot.methods.addVoter($("#txtNewVoterAddress").val(), $("#txtNewVoterName").val()).send({
                 from: accountaddress,
-                gas: 2000000, 
-                gasPrice: web3.utils.toWei('20', 'gwei')        	    
+                gas: mygas, 
+                gasPrice: web3.eth.gasPrice       	    
         	})
             .on('transactionHash', (hash) => {
                 console.log("a");
@@ -430,6 +489,10 @@
             
         });
         
+        $("#btnRefresh").click(async function(){
+           refreshContract($("#contractAddress").val()); 
+        });
+        
         $("#btnGo").click(async function() {	
             $("#loader").show();
             var i = 0;
@@ -442,11 +505,12 @@
             })
             .send({
                 from: accountaddress,
-                gas: 2000000, 
-                gasPrice: web3.utils.toWei('20', 'gwei')
+                gas: 1308700, 
+                gasPrice: web3.eth.gasPrice,
+                gasLimit: 2000000
             }, (error, transactionHash) => {
                 MyTransactionHash = transactionHash;
-                getContract();
+                //getContract(); for private kaleido chain only
             })
             .on('error', (error) => { 
                 console.log("b");            
@@ -455,8 +519,22 @@
                 console.log("c");
             })
             .on('receipt', (receipt) => {
-                console.log(receipt.contractAddress); // contains the new contract address
+                console.log("DONE" + receipt.contractAddress); // contains the new contract address
+                
+                BallotContractAddress = receipt.contractAddress;
+                loadBallotContract(BallotContractAddress);
+                console.log(BallotContractAddress);
+                $("#contractAddress").val(BallotContractAddress);
+                watchVoteStarted(); //start watching for events
+                watchVoterAdded(); //start watching for new voters
+                watchVoteDone(); //start watching for vote done
+                watchVoteEnd(); //start watching for vote end
+                $('#panels_contract').show();
+                $('#panels_voters').show();
+                $("#btnStart").show();
+                $("#btnEnd").hide();
                 $("#loader").hide();
+                $("#section_addVoter").show();
             })
             .on('confirmation', (confirmationNumber, receipt) => { 
                 console.log(i);
