@@ -239,39 +239,20 @@
         
 //-------------- Button Section -------------------//
 
-    /*
-        $("#btnAdd").click(async function() {	
-            $("#loaderNewVoter").show();
-            console.log($("#txtNewVoterAddress").val());
-            console.log($("#txtNewVoterName").val());
-            
-            Ballot = new web3.eth.Contract(ballotABI, BallotContractAddress);
-        	Ballot.methods.addVoter($("#txtNewVoterAddress").val(), $("#txtNewVoterName").val()).send({
-                from: accountaddress,
-                gas: 2000000, 
-                gasPrice: web3.utils.toWei('20', 'gwei')        	    
-        	})
-            .on('transactionHash', (hash) => {
-                console.log("a");
-            })
-            .on('receipt', (receipt) => {
-                console.log("b");            
-                
-            })
-            .on('confirmation', (confirmationNumber, receipt) => {
-                console.log("c");
-            })
-            .on('error', console.error);
-            
-        });
-    */
-        
         $("#btnYes").click(async function(){
             $("#loaderChoice").show();
+            
+            //estimate first
+            var mygas;
+            	Ballot.methods.doVote(true).estimateGas({from: accountaddress})
+            .then(function(gasAmount){
+                mygas = gasAmount;
+            })
+            
         	Ballot.methods.doVote(true).send({
                 from: accountaddress,
-                gas: 2000000, 
-                gasPrice: web3.utils.toWei('20', 'gwei')        	    
+                gas: mygas, 
+                gasPrice: web3.eth.gasPrice      	    
         	})
             .on('transactionHash', (hash) => {
                 console.log("a");
@@ -287,10 +268,18 @@
 
         $("#btnNo").click(async function(){
             $("#loaderChoice").show();
+
+            //estimate first
+            var mygas;
+            	Ballot.methods.doVote(false).estimateGas({from: accountaddress})
+            .then(function(gasAmount){
+                mygas = gasAmount;
+            })
+            
         	Ballot.methods.doVote(false).send({
                 from: accountaddress,
-                gas: 2000000, 
-                gasPrice: web3.utils.toWei('20', 'gwei')        	    
+                gas: mygas, 
+                gasPrice: web3.eth.gasPrice       	    
         	})
             .on('transactionHash', (hash) => {
                 console.log("a");
